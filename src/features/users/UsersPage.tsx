@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { createUser, getRoles, getUsers } from '@/features/users/usersApi'
 import type { RoleDto, UserDto } from '@/features/users/usersApi'
 import { getApiErrorMessage } from '@/shared/api/client'
+import { logger } from '@/shared/lib/logger'
+import { firstError, minLength, requiredText } from '@/shared/lib/validation'
 
 export function UsersPage() {
   const [users, setUsers] = useState<UserDto[]>([])
@@ -46,6 +48,18 @@ export function UsersPage() {
     e.preventDefault()
     setFormError(null)
     setFormOk(null)
+
+    const invalid = firstError(
+      requiredText(username, 'El usuario'),
+      minLength(password, 6, 'La contraseña'),
+      roleId ? null : 'Selecciona un rol.',
+    )
+    if (invalid) {
+      setFormError(invalid)
+      logger.warn('Validación de alta de usuario falló', { reason: invalid })
+      return
+    }
+
     setSaving(true)
     try {
       const res = await createUser({

@@ -15,6 +15,8 @@ import type { EmployeeTypeDef } from '@/features/employees/employeeTypeRegistry'
 import { getDepartments } from '@/features/departments/departmentsApi'
 import type { DepartmentDto } from '@/features/departments/departmentsApi'
 import { getApiErrorMessage } from '@/shared/api/client'
+import { logger } from '@/shared/lib/logger'
+import { firstError, positiveNumber, rate01, requiredText, socialSecurity } from '@/shared/lib/validation'
 
 type RateState = Record<string, string>
 
@@ -99,6 +101,20 @@ export function EmployeeFormPage() {
     }
   }, [employeeId, isNew])
 
+  const validate = (def: EmployeeTypeDef): string | null => {
+    const rateChecks = def.rateFields.map((f) =>
+      f.isRate
+        ? rate01(rate[f.key] ?? '', f.label)
+        : positiveNumber(rate[f.key] ?? '', f.label),
+    )
+    return firstError(
+      requiredText(firstName, 'El primer nombre'),
+      requiredText(lastName, 'El apellido paterno'),
+      socialSecurity(ssn),
+      ...rateChecks,
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -109,6 +125,16 @@ export function EmployeeFormPage() {
       return
     }
 
+    const invalid = validate(typeDef)
+    if (invalid) {
+      setError(invalid)
+      logger.warn('Validación de empleado falló', { reason: invalid })
+      return
+    }
+
+    logger.info(isNew ? 'Creando empleado' : `Editando empleado #${employeeId}`, {
+      type: typeDef.key,
+    })
     setSaving(true)
     try {
       const base = {

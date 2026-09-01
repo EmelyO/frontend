@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from '@/features/layout/Layout'
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute'
 import { LoginPage } from '@/features/auth/LoginPage'
@@ -10,55 +11,67 @@ import { WeeklyReportPage } from '@/features/payroll/WeeklyReportPage'
 import { DepartmentsPage } from '@/features/departments/DepartmentsPage'
 import { UsersPage } from '@/features/users/UsersPage'
 import { NotFoundPage } from '@/features/common/NotFoundPage'
+import { logger } from '@/shared/lib/logger'
+
+function RouteLogger() {
+  const location = useLocation()
+  useEffect(() => {
+    logger.info(`Navegación → ${location.pathname}`)
+  }, [location.pathname])
+  return null
+}
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
+    <>
+      <RouteLogger />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
 
-      <Route
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/" element={<DashboardPage />} />
-
-        <Route path="/employees" element={<EmployeesPage />} />
         <Route
-          path="/employees/new"
           element={
-            <ProtectedRoute requireAdmin>
-              <EmployeeFormPage />
+            <ProtectedRoute>
+              <Layout />
             </ProtectedRoute>
           }
-        />
-        <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-        <Route
-          path="/employees/:id/edit"
-          element={
-            <ProtectedRoute requireAdmin>
-              <EmployeeFormPage />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/" element={<DashboardPage />} />
 
-        <Route path="/report" element={<WeeklyReportPage />} />
-        <Route path="/departments" element={<DepartmentsPage />} />
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute requireAdmin>
-              <UsersPage />
-            </ProtectedRoute>
-          }
-        />
-      </Route>
+          <Route path="/employees" element={<EmployeesPage />} />
+          <Route
+            path="/employees/new"
+            element={
+              <ProtectedRoute requireAdmin>
+                <EmployeeFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+          <Route
+            path="/employees/:id/edit"
+            element={
+              <ProtectedRoute requireAdmin>
+                <EmployeeFormPage />
+              </ProtectedRoute>
+            }
+          />
 
-      <Route path="/404" element={<NotFoundPage />} />
-      <Route path="*" element={<Navigate to="/404" replace />} />
-    </Routes>
+          <Route path="/report" element={<WeeklyReportPage />} />
+          <Route path="/departments" element={<DepartmentsPage />} />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute requireAdmin>
+                <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
+    </>
   )
 }
 

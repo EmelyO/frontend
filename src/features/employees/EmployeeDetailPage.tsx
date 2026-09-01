@@ -13,6 +13,8 @@ import {
 import type { EmployeePayDto, PayrollRecordDto } from '@/features/payroll/payrollTypes'
 import { getApiErrorMessage } from '@/shared/api/client'
 import { formatMoney } from '@/shared/lib/format'
+import { logger } from '@/shared/lib/logger'
+import { dateRange, firstError, nonNegativeNumber } from '@/shared/lib/validation'
 import { useAuth } from '@/features/auth/authContext'
 
 export function EmployeeDetailPage() {
@@ -109,6 +111,19 @@ export function EmployeeDetailPage() {
     e.preventDefault()
     setFormError(null)
     setFormOk(null)
+
+    const invalid = firstError(
+      dateRange(wStart, wEnd),
+      weeklyInput === 'hours' ? nonNegativeNumber(hours, 'Las horas trabajadas') : null,
+      weeklyInput === 'sales' ? nonNegativeNumber(sales, 'Las ventas brutas') : null,
+    )
+    if (invalid) {
+      setFormError(invalid)
+      logger.warn('Validación de captura semanal falló', { employeeId, reason: invalid })
+      return
+    }
+
+    logger.info('Capturando semana de nómina', { employeeId, wStart, wEnd })
     setSaving(true)
     try {
       const res = await createPayrollRecord({

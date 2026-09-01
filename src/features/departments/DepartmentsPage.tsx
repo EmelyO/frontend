@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createDepartment, getDepartments } from '@/features/departments/departmentsApi'
 import type { DepartmentDto } from '@/features/departments/departmentsApi'
 import { getApiErrorMessage } from '@/shared/api/client'
+import { requiredText } from '@/shared/lib/validation'
 import { useAuth } from '@/features/auth/authContext'
 
 export function DepartmentsPage() {
@@ -38,6 +39,13 @@ export function DepartmentsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError(null)
+
+    const invalid = requiredText(name, 'El nombre del departamento')
+    if (invalid) {
+      setFormError(invalid)
+      return
+    }
+
     setSaving(true)
     try {
       const res = await createDepartment({ name: name.trim() })
